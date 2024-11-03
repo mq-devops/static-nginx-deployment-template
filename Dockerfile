@@ -1,9 +1,15 @@
 FROM nginx:latest
 
-# Copy static files to the default NGINX html directory
-COPY ./source /usr/share/nginx/html
+# Remove the default NGINX configuration
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Expose the default NGINX port
+# Copy your custom NGINX configuration
+COPY ./nginx.conf /etc/nginx/conf.d/
+
+# Copy static files from the 'sources' directory to NGINX's HTML directory
+COPY ./sources /usr/share/nginx/html
+
+# Expose port 80
 EXPOSE 80
 
 # Start NGINX
