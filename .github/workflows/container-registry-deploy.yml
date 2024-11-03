@@ -1,34 +1,89 @@
-name: Source Pull + Docker build
+name: Source Pull + Docker Build
 
 on:
   workflow_dispatch:
+    inputs:
+      source_ref:
+        description: 'Tag or branch to checkout from the source repository'
+        required: false
+        default: ''
+
+permissions:
+  contents: read       # Needed to read repository contents
+  packages: write      # Needed to push Docker images to ghcr.io
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     env:
-      DOCKER_REGISTRY: "ghcr.io/"
-      SOURCE_REPOSITORY: "https://github.com/"
-      SOURCE_REPOSITORY_TAG: "1.0.0"
-      SOURCE_REPOSITORY_BRANCH: "dev"
-      SOURCE_REPOSITORY_ACCESS_PAT: "public"
-      
+      DOCKER_REGISTRY: "ghcr.io"
+      SOURCE_REPOSITORY: "owner/source-repo"      # 🔑 Replace with your source repository (owner/repo)
+      IMAGE_NAME: "my-nginx-image"                # 🔑 Replace with your desired image name
+
     steps:
-      - name: Checkout code
+      # 1. Checkout the current repository (contains Dockerfile and nginx.conf)
+      - name: Checkout Current Repository
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: main                                   # 🔑 Set to your default branch
 
-      - name: Login to Container Registry
+      # 2. Set the source reference based on input
+      - name: Set Source Ref
+        id: set_ref
+        run: |
+          if [ -n "${{ github.event.inputs.source_ref }}" ]; then
+            # Check if source_ref is a tag
+            if git rev-parse "refs/tags/${{ github.event.inputs.source_ref }}" >/dev/null 2>&1; then
+              echo "ref=refs/tags/${{ github.event.inputs.source_ref }}" >> $GITHUB_OUTPUT
+              echo "type=tag" >> $GITHUB_OUTPUT
+            else
+              # Assume it's a branch
+              echo "ref=refs/heads/${{ github.event.inputs.source_ref }}" >> $GITHUB_OUTPUT
+              echo "type=branch" >> $GITHUB_OUTPUT
+            fi
+          else
+            # Default to the current branch
+            echo "ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+            echo "type=branch" >> $GITHUB_OUTPUT
+          fi
+
+      # 3. Checkout the source repository into the 'sources' directory
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SOURCE_REPOSITORY }}
+          ref: ${{ steps.set_ref.outputs.ref }}
+          path: sources
+
+      # 4. Login to GitHub Container Registry using GITHUB_TOKEN
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      # 5. Determine the Docker image tag
+      - name: Set Image Tag
+        id: set_tag
         run: |
-          docker build -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_REPOSITORY_PROD }}:${{ github.run_number }} -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_REPOSITORY_PROD }}:latest -f docker/Dockerfile .
-          docker push ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_REPOSITORY_PROD }}:${{ github.run_number }}
-          docker push ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_REPOSITORY_PROD }}:latest
+          if [ "${{ steps.set_ref.outputs.type }}" == "tag" ]; then
+            TAG="${{ github.event.inputs.source_ref }}"
+          else
+            # Replace slashes in branch names with hyphens to create valid tags
+            TAG=$(echo "${{ github.event.inputs.source_ref }}" | tr '/' '-')
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      # 6. Build the Docker image with the static source and custom NGINX config
+      - name: Build Docker Image
+        run: |
+          docker build \
+            -t ${{ env.DOCKER_REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.set_tag.outputs.tag }} \
+            -f docker/Dockerfile .
+
+      # 7. Push the Docker image to GitHub Container Registry
+      - name: Push Docker Image
+        run: |
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.set_tag.outputs.tag }}
