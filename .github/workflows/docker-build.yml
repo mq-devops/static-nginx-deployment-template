@@ -25,7 +25,7 @@ jobs:
       - name: Checkout Current Repository
         uses: actions/checkout@v4
         with:
-          ref: main                                   # 🔑 Set to your workflow repository's branch
+          ref: main
 
       # 2. Determine if SOURCE_REF is a tag or branch in the source repository
       - name: Determine Source Reference Type
@@ -66,7 +66,7 @@ jobs:
           repository: ${{ env.SOURCE_REPOSITORY }}
           ref: ${{ steps.determine_ref.outputs.ref }}
           path: sources
-          token: ${{ secrets.SOURCE_ACCESS_TOKEN }}
+          token: ${{ secrets.SOURCE_ACCESS_TOKEN || github.token }}
 
       # 4. Copy Specified Source Directory to ./source
       - name: Copy Source Directory
@@ -101,7 +101,7 @@ jobs:
         run: |
           docker build \
             -t ${{ env.DOCKER_REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.set_tag.outputs.tag }} \
-            -f docker/Dockerfile .
+            -f Dockerfile .
 
       # 8. Push Docker Image to GitHub Container Registry
       - name: Push Docker Image
