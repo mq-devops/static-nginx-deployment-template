@@ -1,62 +1,83 @@
+# .github/workflows/docker-build.yml
+
 name: Source Pull + Docker Build
 
 on:
   workflow_dispatch:
-    inputs:
-      source_ref:
-        description: 'Tag or branch to checkout from the source repository'
-        required: false
-        default: ''
 
 permissions:
   contents: read       # Needed to read repository contents
   packages: write      # Needed to push Docker images to ghcr.io
 
+env:
+  DOCKER_REGISTRY: "ghcr.io"
+  SOURCE_REPOSITORY: "owner/source-repo"      # 🔑 Replace with your source repository in "owner/repo" format
+  SOURCE_REF: "main"                           # 🔑 Set to the desired tag or branch
+  SOURCE_DIRECTORY: "./public"                 # 🔑 Set to "." or "./" for root or specify a subdirectory like "./public"
+  IMAGE_NAME: "my-nginx-image"                 # 🔑 Replace with your desired image name
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    env:
-      DOCKER_REGISTRY: "ghcr.io"
-      SOURCE_REPOSITORY: "owner/source-repo"      # 🔑 Replace with your source repository (owner/repo)
-      IMAGE_NAME: "my-nginx-image"                # 🔑 Replace with your desired image name
 
     steps:
       # 1. Checkout the current repository (contains Dockerfile and nginx.conf)
       - name: Checkout Current Repository
         uses: actions/checkout@v4
         with:
-          ref: main                                   # 🔑 Set to your default branch
+          ref: main                                   # 🔑 Set to your workflow repository's branch
 
-      # 2. Set the source reference based on input
-      - name: Set Source Ref
-        id: set_ref
+      # 2. Determine if SOURCE_REF is a tag or branch in the source repository
+      - name: Determine Source Reference Type
+        id: determine_ref
         run: |
-          if [ -n "${{ github.event.inputs.source_ref }}" ]; then
-            # Check if source_ref is a tag
-            if git rev-parse "refs/tags/${{ github.event.inputs.source_ref }}" >/dev/null 2>&1; then
-              echo "ref=refs/tags/${{ github.event.inputs.source_ref }}" >> $GITHUB_OUTPUT
-              echo "type=tag" >> $GITHUB_OUTPUT
-            else
-              # Assume it's a branch
-              echo "ref=refs/heads/${{ github.event.inputs.source_ref }}" >> $GITHUB_OUTPUT
-              echo "type=branch" >> $GITHUB_OUTPUT
-            fi
+          SOURCE_REF="${{ env.SOURCE_REF }}"
+          SOURCE_REPO="https://github.com/${{ env.SOURCE_REPOSITORY }}.git"
+          TOKEN="${{ secrets.SOURCE_ACCESS_TOKEN }}"
+          
+          if [ -n "$TOKEN" ]; then
+            AUTH="https://${TOKEN}@github.com/${{ env.SOURCE_REPOSITORY }}.git"
           else
-            # Default to the current branch
-            echo "ref=${{ github.ref }}" >> $GITHUB_OUTPUT
-            echo "type=branch" >> $GITHUB_OUTPUT
+            AUTH="https://github.com/${{ env.SOURCE_REPOSITORY }}.git"
           fi
 
-      # 3. Checkout the source repository into the 'sources' directory
+          # Check if SOURCE_REF is a tag
+          TAG_EXISTS=$(git ls-remote --tags "$AUTH" "refs/tags/$SOURCE_REF" | wc -l)
+          
+          if [ "$TAG_EXISTS" -gt 0 ]; then
+            echo "ref=refs/tags/$SOURCE_REF" >> $GITHUB_OUTPUT
+            echo "type=tag" >> $GITHUB_OUTPUT
+          else
+            # Assume it's a branch
+            BRANCH_EXISTS=$(git ls-remote --heads "$AUTH" "refs/heads/$SOURCE_REF" | wc -l)
+            if [ "$BRANCH_EXISTS" -gt 0 ]; then
+              echo "ref=refs/heads/$SOURCE_REF" >> $GITHUB_OUTPUT
+              echo "type=branch" >> $GITHUB_OUTPUT
+            else
+              echo "Error: SOURCE_REF '$SOURCE_REF' not found as a tag or branch in $SOURCE_REPOSITORY" >&2
+              exit 1
+            fi
+          fi
+
+      # 3. Checkout Source Repository (Private/Public)
       - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
           repository: ${{ env.SOURCE_REPOSITORY }}
-          ref: ${{ steps.set_ref.outputs.ref }}
+          ref: ${{ steps.determine_ref.outputs.ref }}
           path: sources
+          token: ${{ secrets.SOURCE_ACCESS_TOKEN }}
 
-      # 4. Login to GitHub Container Registry using GITHUB_TOKEN
+      # 4. Copy Specified Source Directory to ./source
+      - name: Copy Source Directory
+        run: |
+          if [ "${{ env.SOURCE_DIRECTORY }}" == "." ] || [ "${{ env.SOURCE_DIRECTORY }}" == "./" ]; then
+            cp -r sources/. ./source
+          else
+            cp -r sources/${{ env.SOURCE_DIRECTORY }}/ ./source
+          fi
+
+      # 5. Login to GitHub Container Registry using GITHUB_TOKEN
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -64,26 +85,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5. Determine the Docker image tag
+      # 6. Set Docker Image Tag Based on Reference Type
       - name: Set Image Tag
         id: set_tag
         run: |
-          if [ "${{ steps.set_ref.outputs.type }}" == "tag" ]; then
-            TAG="${{ github.event.inputs.source_ref }}"
+          if [ "${{ steps.determine_ref.outputs.type }}" == "tag" ]; then
+            TAG="${{ env.SOURCE_REF }}"
           else
-            # Replace slashes in branch names with hyphens to create valid tags
-            TAG=$(echo "${{ github.event.inputs.source_ref }}" | tr '/' '-')
+            TAG=$(echo "${{ env.SOURCE_REF }}" | tr '/' '-')
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-      # 6. Build the Docker image with the static source and custom NGINX config
+      # 7. Build Docker Image
       - name: Build Docker Image
         run: |
           docker build \
             -t ${{ env.DOCKER_REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.set_tag.outputs.tag }} \
             -f docker/Dockerfile .
 
-      # 7. Push the Docker image to GitHub Container Registry
+      # 8. Push Docker Image to GitHub Container Registry
       - name: Push Docker Image
         run: |
           docker push ${{ env.DOCKER_REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.set_tag.outputs.tag }}
