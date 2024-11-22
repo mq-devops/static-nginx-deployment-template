@@ -13,7 +13,7 @@ env:
   DOCKER_REGISTRY: "ghcr.io"
   SOURCE_REPOSITORY: "owner/source-repo"      # 🔑 Replace with your source repository in "owner/repo" format
   SOURCE_REF: "main"                           # 🔑 Set to the desired tag or branch
-  SOURCE_DIRECTORY: "./public"                 # 🔑 Set to "." or "./" for root or specify a subdirectory like "./public"
+  SOURCE_DIRECTORY: "public"                 # 🔑 Set to "." or "./" for root or specify a subdirectory like "src", "public" or "build"
   IMAGE_NAME: "my-nginx-image"                 # 🔑 Replace with your desired image name
   SOURCE_DEPLOYMENT_KEY: ${{ secrets.SOURCE_DEPLOYMENT_KEY }}
 
