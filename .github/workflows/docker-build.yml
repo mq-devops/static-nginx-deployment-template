@@ -30,7 +30,7 @@ jobs:
 
       # 2. Set up SSH Key and known_hosts for Source Repository Access (Optional)
       - name: Set up SSH Key for Source Repository Access (Optional)
-        uses: webfactory/ssh-agent@v0.5.3
+        uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SOURCE_DEPLOYMENT_KEY }}
         if: env.SOURCE_DEPLOYMENT_KEY !=  ''
