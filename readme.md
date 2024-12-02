@@ -26,7 +26,7 @@ This repository automates the deployment of static websites using GitHub Actions
 
 ## How It Works
 
-1. **Source Code Retrieval:** The workflow fetches static content from the specified repository and reference (tag or branch). If a `SOURCE_ACCESS_TOKEN` is provided, it accesses private repositories; otherwise, it fetches from public repositories.
+1. **Source Code Retrieval:** The workflow fetches static content from the specified repository and reference (tag or branch). If a `SOURCE_DEPLOYMENT_KEY` is provided, it accesses private repositories; otherwise, it fetches from public repositories.
 
 2. **Directory Management:** It copies the specified source directory containing the static content to the build context.
 
