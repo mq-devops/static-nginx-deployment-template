@@ -1,6 +1,6 @@
 # Static Site Deployment with GitHub Actions and NGINX
 
-This repository automates the deployment of static websites using GitHub Actions and NGINX. It fetches static content from another GitHub repository (public or private), builds a customized NGINX Docker image, and pushes it to GitHub Container Registry (`ghcr.io`). The setup ensures secure and efficient deployments with clear versioning based on Git references.
+This repository automates the deployment of static websites using GitHub Actions and NGINX. It fetches static content from another GitHub repository (public or private), builds a customized NGINX Docker image, and pushes it to GitHub Container Registry (`ghcr.io`). The setup provides secure and efficient deployments with clear versioning based on Git references.
 
 ## Features
 
@@ -22,7 +22,7 @@ This repository automates the deployment of static websites using GitHub Actions
 - **Secure and Efficient CI/CD Pipeline**
   - **Least-Privilege Permissions:** The workflow requests only the necessary permissions (`contents: read` and `packages: write`), enhancing security.
   - **Environment Variables Configuration:** Easily configurable environment variables for Docker registry, source repository details, image naming, and source directory.
-  - **Manual Triggers:** Designed to be triggered manually via the GitHub Actions tab, providing control over deployments.
+  - **Manual Triggers:** Designed to be triggered manually via the GitHub Actions tab, giving control over deployments.
 
 ## How It Works
 
@@ -32,7 +32,7 @@ This repository automates the deployment of static websites using GitHub Actions
 
 3. **Docker Image Building:** The workflow builds a Docker image using the provided `Dockerfile`, which sets up NGINX with the static content and custom configuration.
 
-4. **Image Tagging and Pushing:** The Docker image is tagged based on the Git reference and pushed to GitHub Container Registry, ensuring clear versioning and secure storage.
+4. **Image Tagging and Pushing:** The Docker image is tagged based on the Git reference and pushed to GitHub Container Registry, providing clear versioning and secure storage.
 
 ## Configuration
 
@@ -44,7 +44,7 @@ This repository automates the deployment of static websites using GitHub Actions
   - `IMAGE_NAME`: Name of the Docker image to build.
 
 - **Secrets:**
-  - `SOURCE_ACCESS_TOKEN` *(Optional)*: Personal Access Token for accessing private repositories.
+  - `SOURCE_DEPLOYMENT_KEY` *(Optional)*: Deployment key for accessing private repositories.
   - `GITHUB_TOKEN`: Automatically provided by GitHub Actions for authentication with GitHub Container Registry.
 
 ## Usage
@@ -62,4 +62,4 @@ This repository automates the deployment of static websites using GitHub Actions
 - **Least-Privilege Permissions:** The workflow only requests necessary permissions to minimize security risks.
 - **Secure Access Tokens:** Use repository secrets to manage access tokens securely, avoiding exposure in logs or code.
 
-By leveraging this setup, you can efficiently deploy static websites with clear versioning and secure image management using GitHub Actions and NGINX.
+By using this setup, you can efficiently deploy static websites with clear versioning and secure image management using GitHub Actions and NGINX.
