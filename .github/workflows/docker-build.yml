@@ -22,20 +22,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout Current Repository (contains Dockerfile and nginx.conf)
+      # Checkout Current Repository (contains Dockerfile and nginx.conf)
       - name: Checkout Current Repository
         uses: actions/checkout@v4
         with:
           ref: main                                   # 🔑 Set to your workflow repository's branch
 
-      # 2. Set up SSH Key and known_hosts for Source Repository Access (Optional)
+      # Set up SSH Key and known_hosts for Source Repository Access (Optional)
       - name: Set up SSH Key for Source Repository Access (Optional)
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SOURCE_DEPLOYMENT_KEY }}
         if: env.SOURCE_DEPLOYMENT_KEY !=  ''
 
-      # 3. Determine if SOURCE_REF is a tag or branch in the source repository
+      # Determine if SOURCE_REF is a tag or branch in the source repository
       - name: Determine Source Reference Type
         id: determine_ref
         run: |
@@ -65,7 +65,7 @@ jobs:
             fi
           fi
 
-      # 4. Checkout Source Repository
+      # Checkout Source Repository
       - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
@@ -74,7 +74,7 @@ jobs:
           path: sources
           ssh-key: ${{ secrets.SOURCE_DEPLOYMENT_KEY || '' }}
 
-      # 5. Copy Specified Source Directory to ./source
+      # Copy Specified Source Directory to ./source
       - name: Copy Source Directory
         run: |
           if [ "${{ env.SOURCE_DIRECTORY }}" == "." ] || [ "${{ env.SOURCE_DIRECTORY }}" == "./" ]; then
@@ -83,7 +83,7 @@ jobs:
             cp -r sources/${{ env.SOURCE_DIRECTORY }}/ ./source
           fi
 
-      # 6. Login to GitHub Container Registry using GITHUB_TOKEN
+      # Login to GitHub Container Registry using GITHUB_TOKEN
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -91,7 +91,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 7. Set Docker Image Tag Based on Reference Type
+      # Set Docker Image Tag Based on Reference Type
       - name: Set Image Tag
         id: set_tag
         run: |
@@ -102,14 +102,14 @@ jobs:
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-      # 8. Build Docker Image
+      # Build Docker Image
       - name: Build Docker Image
         run: |
           docker build \
             -t ${{ env.DOCKER_REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.set_tag.outputs.tag }} \
             -f Dockerfile .
 
-      # 9. Push Docker Image to GitHub Container Registry
+      # Push Docker Image to GitHub Container Registry
       - name: Push Docker Image
         run: |
           docker push ${{ env.DOCKER_REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.set_tag.outputs.tag }}
