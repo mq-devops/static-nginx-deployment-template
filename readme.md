@@ -1,6 +1,8 @@
 # Static Site Deployment with GitHub Actions and NGINX
 
-This repository automates the deployment of static websites using GitHub Actions and NGINX. It fetches static content from another GitHub repository (public or private), builds a customized NGINX Docker image, and pushes it to GitHub Container Registry (`ghcr.io`). The setup provides secure and efficient deployments with clear versioning based on Git references.
+This repository automates the deployment of static websites using GitHub Actions and NGINX. 
+
+It fetches static content from another GitHub repository (public or private), builds a customized NGINX Docker image, and pushes it to GitHub Container Registry (`ghcr.io`). The setup provides clear versioning based on Git references.
 
 ## Features
 
@@ -51,7 +53,7 @@ This repository automates the deployment of static websites using GitHub Actions
 
 1. **Set Environment Variables:** Configure the environment variables in the workflow file with your repository details.
 
-2. **Configure Secrets:** If accessing a private repository, add `SOURCE_ACCESS_TOKEN` as a secret in your GitHub repository settings.
+2. **Configure Secrets:** If accessing a private repository, add `SOURCE_DEPLOYMENT_KEY` as a secret in your GitHub repository settings.
 
 3. **Trigger Workflow:** Manually trigger the workflow via the GitHub Actions tab.
 
@@ -59,7 +61,5 @@ This repository automates the deployment of static websites using GitHub Actions
 
 ## Security
 
-- **Least-Privilege Permissions:** The workflow only requests necessary permissions to minimize security risks.
-- **Secure Access Tokens:** Use repository secrets to manage access tokens securely, avoiding exposure in logs or code.
-
-By using this setup, you can efficiently deploy static websites with clear versioning and secure image management using GitHub Actions and NGINX.
+- **Least-Privilege Permissions:** The workflow only requests necessary permissions
+- **Secure Access Tokens:** Use repository secrets to manage access tokens
