@@ -1,6 +1,6 @@
 # Static Site Deployment with GitHub Actions and NGINX
 
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/OWNER/REPO/.github/workflows/docker-build.yml?branch=main&style=for-the-badge)](https://github.com/OWNER/REPO/actions)
+<!-- [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/OWNER/REPO/.github/workflows/docker-build.yml?branch=main&style=for-the-badge)](https://github.com/OWNER/REPO/actions)-->
 
 This repository provides a robust and automated solution for deploying static websites using GitHub Actions and NGINX. It fetches your static content from any GitHub repository, builds a lean NGINX Docker image, and pushes it to the GitHub Container Registry (`ghcr.io`).
 
