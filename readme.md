@@ -1,65 +1,47 @@
 # Static Site Deployment with GitHub Actions and NGINX
 
-This repository automates the deployment of static websites using GitHub Actions and NGINX. 
+<!-- [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/OWNER/REPO/.github/workflows/docker-build.yml?branch=main&style=for-the-badge)](https://github.com/OWNER/REPO/actions)-->
 
-It fetches static content from another GitHub repository (public or private), builds a customized NGINX Docker image, and pushes it to GitHub Container Registry (`ghcr.io`). The setup provides clear versioning based on Git references.
+This repository provides a robust and automated solution for deploying static websites using GitHub Actions and NGINX. It fetches your static content from any GitHub repository, builds a lean NGINX Docker image, and pushes it to the GitHub Container Registry (`ghcr.io`).
 
 ## Features
 
-- **Automated Source Code Retrieval**
-  - **Public and Private Repositories:** Supports fetching static content from both public and private GitHub repositories.
-  - **Tag or Branch Selection:** Allows specifying a tag or branch to determine the version of the content to deploy.
-  - **Custom Source Directory:** Enables specifying a subdirectory within the source repository that contains the static content.
+- **Automated Deployments**: Trigger deployments manually or [via API](https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#create-a-workflow-dispatch-event) with `workflow_dispatch`.
+- **Flexible Content Sourcing**: Fetch static content from public or private repositories, with support for specific branches or tags.
+- **Custom NGINX Configuration**: A pre-configured `nginx.conf` with commented-out options for further customization.
+- **Dynamic Image Tagging**: Automatically tags Docker images based on the Git reference.
 
-- **Customizable NGINX Configuration**
-  - **Standard `nginx.conf`:** Comes with a baseline configuration optimized for serving static content.
-  - **Optional Settings:** Options to disable browser caching, provide a custom 404 error page, and disable logging.
-  - **Additional Configurations:** Supports configurations for CORS, security headers, and HTTPS redirects.
+## Getting Started
 
-- **Docker Image Management**
-  - **NGINX Docker Image:** Automatically builds a Docker image bundling the static content with the customized NGINX configuration.
-  - **Dynamic Tagging:** Tags the Docker image based on the Git reference (tag or branch) used to trigger the workflow, ensuring clear versioning without using the ambiguous `latest` tag.
-  - **GitHub Container Registry Integration:** Pushes the Docker image to GitHub Container Registry (`ghcr.io`) securely using GitHub's `GITHUB_TOKEN` and an optional custom access token for private repositories.
-
-- **Secure and Efficient CI/CD Pipeline**
-  - **Least-Privilege Permissions:** The workflow requests only the necessary permissions (`contents: read` and `packages: write`), enhancing security.
-  - **Environment Variables Configuration:** Easily configurable environment variables for Docker registry, source repository details, image naming, and source directory.
-  - **Manual Triggers:** Designed to be triggered manually via the GitHub Actions tab, giving control over deployments.
-
-## How It Works
-
-1. **Source Code Retrieval:** The workflow fetches static content from the specified repository and reference (tag or branch). If a `SOURCE_DEPLOYMENT_KEY` is provided, it accesses private repositories; otherwise, it fetches from public repositories.
-
-2. **Directory Management:** It copies the specified source directory containing the static content to the build context.
-
-3. **Docker Image Building:** The workflow builds a Docker image using the provided `Dockerfile`, which sets up NGINX with the static content and custom configuration.
-
-4. **Image Tagging and Pushing:** The Docker image is tagged based on the Git reference and pushed to GitHub Container Registry, providing clear versioning and secure storage.
+1. **Configure the Workflow**: Edit the `env` section in `.github/workflows/docker-build.yml` to match your source repository details.
+2. **Add Secrets**: If you're using a private repository, add a `SOURCE_DEPLOYMENT_KEY` secret to your repository settings. This should be a deploy key with read access to your source repository.
+3. **Run the Workflow**: Trigger the `Source Pull + Docker Build` workflow manually from the Actions tab.
 
 ## Configuration
 
-- **Environment Variables:**
-  - `DOCKER_REGISTRY`: Docker registry URL (`ghcr.io`).
-  - `SOURCE_REPOSITORY`: The GitHub repository to fetch static content from.
-  - `SOURCE_REF`: The specific tag or branch to checkout.
-  - `SOURCE_DIRECTORY`: Directory within the source repository containing static content.
-  - `IMAGE_NAME`: Name of the Docker image to build.
+The deployment process is configured through environment variables in the `.github/workflows/docker-build.yml` file:
 
-- **Secrets:**
-  - `SOURCE_DEPLOYMENT_KEY` *(Optional)*: Deployment key for accessing private repositories.
-  - `GITHUB_TOKEN`: Automatically provided by GitHub Actions for authentication with GitHub Container Registry.
+| Variable              | Description                                                                                              | Default             |
+| --------------------- | -------------------------------------------------------------------------------------------------------- | ------------------- |
+| `DOCKER_REGISTRY`     | The Docker registry to push the image to.                                                                | `ghcr.io`           |
+| `SOURCE_REPOSITORY`   | The GitHub repository to fetch static content from (e.g., `owner/repo`).                                 | `owner/source-repo` |
+| `SOURCE_REF`          | The branch or tag to check out from the source repository.                                               | `main`              |
+| `SOURCE_DIRECTORY`    | The directory within the source repository that contains the static content.                             | `public`            |
+| `IMAGE_NAME`          | The name of the Docker image to build.                                                                   | `my-nginx-image`    |
 
-## Usage
+### Secrets
 
-1. **Set Environment Variables:** Configure the environment variables in the workflow file with your repository details.
-
-2. **Configure Secrets:** If accessing a private repository, add `SOURCE_DEPLOYMENT_KEY` as a secret in your GitHub repository settings.
-
-3. **Trigger Workflow:** Manually trigger the workflow via the GitHub Actions tab.
-
-4. **Monitor Deployment:** Check the workflow logs to ensure successful build and push of the Docker image.
+- `SOURCE_DEPLOYMENT_KEY`: (Optional) A private SSH key used to access private source repositories.
 
 ## Security
 
-- **Least-Privilege Permissions:** The workflow only requests necessary permissions
-- **Secure Access Tokens:** Use repository secrets to manage access tokens
+- **Least Privilege**: The workflow is configured to use the minimum required permissions.
+- **Secrets**: All sensitive information, such as deployment keys, should be stored as encrypted secrets in your GitHub repository.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a pull request or open an issue.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
