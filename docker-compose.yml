@@ -1,0 +1,17 @@
+services:
+  svc-enc-dev:
+    image: ${IMG}
+    container_name: nginx-container
+    restart: always
+    ports:
+      - "127.0.0.1:${IMG-PORT}:80"
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+        - /var/cache/nginx:rw,uid=101,gid=101,mode=0755
+        - /run:rw,uid=101,gid=101,mode=0755

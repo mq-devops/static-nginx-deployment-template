@@ -1,13 +1,9 @@
 FROM nginx:latest as final
 
-# Copy your custom NGINX configuration
-COPY ./nginx.conf /etc/nginx/nginx.conf
+# Remove the default NGINX configuration
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Create nginx user/group
-RUN addgroup --system nginx && adduser --system --ingroup nginx nginx
-
-# Apply strict permissions
-COPY nginx.conf /etc/nginx/nginx.conf
+# Not needed when using tmpfs:
 RUN mkdir -p \
       /run \
       /var/cache/nginx/client_temp \
@@ -18,19 +14,22 @@ RUN mkdir -p \
   && chown -R nginx:nginx \
       /var/cache/nginx /var/run /var/log/nginx /run
 
- # Remove the default NGINX configuration
-RUN rm /etc/nginx/conf.d/default.conf
+USER nginx # UID: 101 | GID: 101
+
+# Apply the custom NGINX configuration
+COPY ./nginx.conf /etc/nginx/nginx.conf
 
 # Copy static site
-COPY --chown=nginx:nginx source/ /usr/share/nginx/html/
+COPY source/ /usr/share/nginx/html/
 
-# Expose port 80
+# Remove .git from public exposure
+RUN rm -rf /usr/share/nginx/html/.git
+
 EXPOSE 80
 
-USER nginx
-HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost/ || exit 1
+# Health check with curl (available since 1.18.0)
+HEALTHCHECK --interval=30s --timeout=5s \
+  CMD curl -fs http://localhost/ || exit 1 
 
 # Start NGINX
 CMD ["nginx", "-g", "daemon off;"]
-
-
