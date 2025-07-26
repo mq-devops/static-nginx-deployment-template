@@ -22,9 +22,6 @@ COPY ./nginx.conf /etc/nginx/nginx.conf
 # Copy static site
 COPY source/ /usr/share/nginx/html/
 
-# Remove .git from public exposure
-RUN rm -rf /usr/share/nginx/html/.git
-
 EXPOSE 80
 
 # Health check with curl (available since 1.18.0)
