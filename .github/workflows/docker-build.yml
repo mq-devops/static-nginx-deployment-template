@@ -28,11 +28,19 @@ jobs:
         with:
           repository: ${{ env.SOURCE_REPOSITORY }}
           ref: ${{ env.SOURCE_REF }}
-          path: ./source
+          path: ./sources
           ssh-key: ${{ secrets.SOURCE_DEPLOYMENT_KEY || '' }}
 
       - name: Remove Git metadata
-        run: rm -rf source/.git
+        run: rm -rf sources/.git
+
+      - name: Copy Source Directory
+        run: |
+          if [ "${{ env.SOURCE_DIRECTORY }}" == "." ] || [ "${{ env.SOURCE_DIRECTORY }}" == "./" ]; then
+            cp -r sources/. ./source
+          else
+            cp -r sources/${{ env.SOURCE_DIRECTORY }}/ ./source
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
